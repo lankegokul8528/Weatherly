@@ -1,0 +1,233 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   CSS Custom Properties – Light & Dark Theme Tokens
+   ============================================================ */
+:root {
+  --bg-primary: #f0f4f8;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-card-solid: #ffffff;
+  --border-color: rgba(226, 232, 240, 0.8);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-light: #eff6ff;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.8);
+}
+
+.dark {
+  --bg-primary: #0b1120;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.7);
+  --bg-card-solid: #1f2937;
+  --border-color: rgba(55, 65, 81, 0.8);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #60a5fa;
+  --accent-light: #1e3a5f;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(17, 24, 39, 0.6);
+  --glass-border: rgba(55, 65, 81, 0.6);
+}
+
+/* ============================================================
+   Base Reset & Body
+   ============================================================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Glass Card Utility
+   ============================================================ */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* ============================================================
+   Skeleton Shimmer
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 25%,
+    var(--border-color) 50%,
+    var(--bg-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.75rem;
+}
+
+/* ============================================================
+   Custom Scrollbar
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ============================================================
+   Leaflet Map Overrides
+   ============================================================ */
+.leaflet-container {
+  border-radius: 1.25rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   Recharts Tooltip
+   ============================================================ */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+/* ============================================================
+   Transition Utilities
+   ============================================================ */
+.transition-theme {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ============================================================
+   Horizontal Scroll Container (hide scrollbar but keep scroll)
+   ============================================================ */
+.scroll-x-hidden {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-x-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   Weather Gradient Backgrounds
+   ============================================================ */
+.bg-sunny {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+}
+
+.bg-cloudy {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+.bg-rainy {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.bg-stormy {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+}
+
+.bg-snowy {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+}
+
+.bg-night {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0b1120 100%);
+}
+
+/* ============================================================
+   Active Hourly Item
+   ============================================================ */
+.hourly-active {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* ============================================================
+   Alert Severity Styles
+   ============================================================ */
+.alert-info {
+  border-left: 4px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.alert-warning {
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.alert-severe {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================================
+   Focus Styles
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Stat Card Icon Wrapper
+   ============================================================ */
+.stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
