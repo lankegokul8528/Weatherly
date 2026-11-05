@@ -7,9 +7,6 @@ import {
   getWeatherAlerts,
 } from '../services/weatherApi.js';
 
-/* ============================================================
-   Initial State
-   ============================================================ */
 const initialState = {
   currentWeather: null,
   hourlyForecast: [],
@@ -24,9 +21,33 @@ const initialState = {
   searchQuery: '',
 };
 
-/* ============================================================
-   Reducer
-   ============================================================ */
+function createSyncedWeeklyForecast(current, rawWeekly = []) {
+  if (!current || !rawWeekly.length) return rawWeekly;
+  const currentTemp = current.temp ?? current.main?.temp ?? 0;
+
+  return rawWeekly.map((day, idx) => {
+    if (idx === 0 || day.day === 'Today') {
+      const existingHigh = day.high ?? day.tempMax ?? currentTemp;
+      const existingLow = day.low ?? day.tempMin ?? currentTemp;
+      const syncedHigh = Math.max(existingHigh, currentTemp);
+      const syncedLow = Math.min(existingLow, currentTemp);
+
+      return {
+        ...day,
+        day: 'Today',
+        high: syncedHigh,
+        low: syncedLow,
+        tempMax: syncedHigh,
+        tempMin: syncedLow,
+        condition: current.condition || day.condition,
+        conditionCode: current.conditionCode || day.conditionCode,
+        icon: current.icon || day.icon,
+      };
+    }
+    return day;
+  });
+}
+
 function weatherReducer(state, action) {
   switch (action.type) {
     case 'SET_LOADING':
@@ -64,10 +85,20 @@ function weatherReducer(state, action) {
       return { ...state, favorites: updated };
     }
     case 'ADD_RECENT': {
-      const filtered = state.recentSearches.filter((r) => r !== action.payload);
+      if (!action.payload) return state;
+      const filtered = state.recentSearches.filter((r) => r.toLowerCase() !== action.payload.toLowerCase());
       const updated = [action.payload, ...filtered].slice(0, 5);
       localStorage.setItem('weatherRecent', JSON.stringify(updated));
       return { ...state, recentSearches: updated };
+    }
+    case 'REMOVE_RECENT': {
+      const updated = state.recentSearches.filter((city) => city.toLowerCase() !== action.payload.toLowerCase());
+      localStorage.setItem('weatherRecent', JSON.stringify(updated));
+      return { ...state, recentSearches: updated };
+    }
+    case 'CLEAR_RECENT': {
+      localStorage.setItem('weatherRecent', JSON.stringify([]));
+      return { ...state, recentSearches: [] };
     }
     case 'SET_SEARCH_QUERY':
       return { ...state, searchQuery: action.payload };
@@ -76,15 +107,11 @@ function weatherReducer(state, action) {
   }
 }
 
-/* ============================================================
-   Context
-   ============================================================ */
 const WeatherContext = createContext(null);
 
 export function WeatherProvider({ children }) {
   const [state, dispatch] = useReducer(weatherReducer, initialState);
 
-  // Apply theme to <html> element
   useEffect(() => {
     const root = document.documentElement;
     if (state.theme === 'dark') {
@@ -94,52 +121,48 @@ export function WeatherProvider({ children }) {
     }
   }, [state.theme]);
 
-  /**
-   * Fetch weather data for a city name
-   */
   async function fetchWeatherForCity(city) {
     if (!city?.trim()) return;
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const [current, forecast, alerts] = await Promise.all([
+      const [current, forecast] = await Promise.all([
         getCurrentWeather(city),
         getForecast(city),
-        getWeatherAlerts(0, 0), // alerts need lat/lon from current
       ]);
-      // Re-fetch alerts with actual coordinates
       const alertsWithCoords = await getWeatherAlerts(current.lat, current.lon);
+      const syncedWeekly = createSyncedWeeklyForecast(current, forecast.weekly);
+
       dispatch({
         type: 'SET_WEATHER',
         payload: {
           current,
           hourly: forecast.hourly,
-          weekly: forecast.weekly,
+          weekly: syncedWeekly,
           alerts: alertsWithCoords,
         },
       });
-      dispatch({ type: 'ADD_RECENT', payload: city });
+      dispatch({ type: 'ADD_RECENT', payload: current.city || city });
     } catch (err) {
       dispatch({ type: 'SET_ERROR', payload: err.message });
     }
   }
 
-  /**
-   * Fetch weather by coordinates (geolocation)
-   */
   async function fetchWeatherByCoords(lat, lon) {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const [current, forecast, alerts] = await Promise.all([
+      const [current, alerts] = await Promise.all([
         getWeatherByCoordinates(lat, lon),
-        getForecastByCoordinates(lat, lon),
         getWeatherAlerts(lat, lon),
       ]);
+      const forecastData = await getForecastByCoordinates(lat, lon);
+      const syncedWeekly = createSyncedWeeklyForecast(current, forecastData.weekly);
+
       dispatch({
         type: 'SET_WEATHER',
         payload: {
           current,
-          hourly: forecast.hourly,
-          weekly: forecast.weekly,
+          hourly: forecastData.hourly,
+          weekly: syncedWeekly,
           alerts,
         },
       });
@@ -149,19 +172,22 @@ export function WeatherProvider({ children }) {
     }
   }
 
-  /**
-   * Load default city on mount
-   */
   useEffect(() => {
     const lastCity = state.recentSearches[0] || 'Vijayawada';
     fetchWeatherForCity(lastCity);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = {
     ...state,
     dispatch,
     fetchWeatherForCity,
     fetchWeatherByCoords,
+    removeRecentSearch(city) {
+      dispatch({ type: 'REMOVE_RECENT', payload: city });
+    },
+    clearRecentSearches() {
+      dispatch({ type: 'CLEAR_RECENT' });
+    },
     toggleFavorite(weather) {
       const isFav = state.favorites.some((f) => f.city === weather.city);
       if (isFav) {

@@ -4,53 +4,53 @@ import { useWeather } from '../context/WeatherContext.jsx';
 import { getTempValue, getConditionStyle } from '../utils/weatherUtils.js';
 
 export default function HourlyForecast() {
-  const { hourlyForecast, unit } = useWeather();
-  if (!hourlyForecast?.length) return null;
+  const { hourlyForecast, hourly, unit } = useWeather();
+  const data = hourlyForecast?.length ? hourlyForecast : hourly;
 
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentAmPm = currentHour >= 12 ? 'PM' : 'AM';
-  const currentHour12 = currentHour % 12 || 12;
-  const currentTimeLabel = `${currentHour12.toString().padStart(2, '0')} ${currentAmPm}`;
+  if (!data?.length) return null;
 
   return (
-    <div className="glass-card p-5 animate-fade-in">
-      <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4">
-        Today's Hourly Forecast
-      </h2>
-      <div className="scroll-x-hidden">
-        <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
-          {hourlyForecast.map((hour, idx) => {
-            const isActive = hour.time === currentTimeLabel;
-            const condStyle = getConditionStyle(hour.conditionCode);
+    <div className="p-5 rounded-xl bg-slate-800/80 border border-slate-700/70 shadow-sm space-y-4 text-slate-100">
+      <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+        <h3 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+          <span>🕒</span> Hourly Forecast
+        </h3>
+        <span className="text-xs text-slate-400">Next 24 Hours</span>
+      </div>
 
-            return (
-              <div
-                key={idx}
-                className={`flex flex-col items-center gap-2 px-4 py-3 rounded-2xl transition-all duration-200 cursor-default
-                  ${isActive
-                    ? 'hourly-active scale-105'
-                    : 'hover:bg-[var(--border-color)] text-[var(--text-secondary)]'
-                  }`}
-                style={{ minWidth: '72px' }}
-              >
-                <span className={`text-xs font-semibold ${isActive ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
-                  {isActive ? 'Now' : hour.time}
-                </span>
-                <span className="text-2xl" role="img" aria-label={hour.condition}>
-                  {condStyle.emoji}
-                </span>
-                <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-[var(--text-primary)]'}`}>
-                  {getTempValue(hour.temp, unit)}°
-                </span>
-                <div className={`flex items-center gap-0.5 text-xs ${isActive ? 'text-white/70' : 'text-blue-400'}`}>
-                  <Droplets className="w-3 h-3" />
-                  <span>{hour.rainChance}%</span>
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        {data.slice(0, 24).map((hour, idx) => {
+          const isActive = idx === 0 || hour.time === 'Now';
+          const condStyle = getConditionStyle?.(hour.conditionCode || hour.condition) || { emoji: '🌤️' };
+          const tempValue = getTempValue ? getTempValue(hour.temp, unit) : Math.round(hour.temp);
+          const rainProb = hour.rainChance ?? hour.pop ?? 0;
+
+          return (
+            <div
+              key={idx}
+              className={`flex flex-col items-center justify-between min-w-[76px] p-3 rounded-lg border transition-all ${
+                isActive
+                  ? 'bg-blue-600/30 border-blue-500/50 text-white scale-105'
+                  : 'bg-slate-900/80 border-slate-700/60 text-slate-300 hover:bg-slate-700/40'
+              }`}
+            >
+              <span className={`text-xs font-semibold ${isActive ? 'text-blue-300' : 'text-slate-400'}`}>
+                {isActive ? 'Now' : hour.time}
+              </span>
+              <span className="text-2xl my-1" role="img" aria-label={hour.condition || 'Weather'}>
+                {condStyle.emoji}
+              </span>
+              <span className="text-sm font-bold text-white">{tempValue}°</span>
+
+              {rainProb > 0 && (
+                <div className="flex items-center gap-0.5 mt-1 text-[10px] text-sky-400 font-semibold">
+                  <Droplets className="w-2.5 h-2.5" />
+                  <span>{rainProb}%</span>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

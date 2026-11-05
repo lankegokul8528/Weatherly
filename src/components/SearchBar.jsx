@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, Loader2, Trash2 } from 'lucide-react';
 import { useWeather } from '../context/WeatherContext.jsx';
 
 export default function SearchBar({ onClose }) {
   const context = useWeather() || {};
-  
-  // Safely extract context functions/state with fallbacks
-  const fetchWeatherForCity = context.fetchWeatherForCity || context.fetchWeather || context.handleSearch || (() => {});
+  const fetchWeatherForCity = context.fetchWeatherForCity || (() => {});
   const loading = context.loading || false;
   const recentSearches = context.recentSearches || [];
-  const removeRecentSearch = context.removeRecentSearch || context.deleteRecentSearch;
+  const removeRecentSearch = context.removeRecentSearch;
   const clearRecentSearches = context.clearRecentSearches;
 
   const [query, setQuery] = useState('');
@@ -42,7 +40,6 @@ export default function SearchBar({ onClose }) {
 
   return (
     <div className="relative w-full max-w-md">
-      {/* Search Input Bar */}
       <div
         className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-200
           bg-[var(--glass-bg)] backdrop-blur-md
@@ -63,7 +60,7 @@ export default function SearchBar({ onClose }) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 250)} // Increased timeout so click registers
+          onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           placeholder="Search city..."
           className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none min-w-0"
           aria-label="Search for a city"
@@ -73,7 +70,7 @@ export default function SearchBar({ onClose }) {
           <button
             type="button"
             onClick={() => setQuery('')}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
             aria-label="Clear input text"
           >
             <X className="w-4 h-4" />
@@ -91,59 +88,67 @@ export default function SearchBar({ onClose }) {
         )}
       </div>
 
-      {/* Recent Searches Dropdown */}
       {showSuggestions && (
-        <div className="absolute top-full mt-2 left-0 right-0 glass-card py-1 z-50 animate-slide-up overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1.5">
+        <div className="absolute top-full mt-2 left-0 right-0 glass-card py-1 z-50 animate-slide-up overflow-hidden rounded-2xl border border-[var(--border-color)]">
+          <div className="px-3 py-1.5 border-b border-[var(--border-color)]">
             <p className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wider">
               Recent Searches
             </p>
-            {clearRecentSearches && (
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  clearRecentSearches();
-                }}
-                className="text-[10px] text-[var(--text-muted)] hover:text-red-400 transition-colors"
-              >
-                Clear All
-              </button>
-            )}
           </div>
 
-          {recentSearches.map((city) => (
-            <div
-              key={city}
-              className="w-full px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors flex items-center justify-between group cursor-pointer"
-            >
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSearch(city);
-                }}
-                className="flex items-center gap-2 flex-1 text-left"
+          <div className="max-h-60 overflow-y-auto">
+            {recentSearches.map((city) => (
+              <div
+                key={city}
+                className="w-full px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border-color)]/50 transition-colors flex items-center justify-between group"
               >
-                <Search className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                <span>{city}</span>
-              </button>
-
-              {removeRecentSearch && (
                 <button
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    removeRecentSearch(city);
+                    handleSearch(city);
                   }}
-                  className="p-1 text-[var(--text-muted)] hover:text-red-400 transition-colors rounded-md"
-                  title={`Remove ${city}`}
+                  className="flex items-center gap-2 flex-1 text-left cursor-pointer min-w-0"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Search className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
+                  <span className="truncate">{city}</span>
                 </button>
-              )}
+
+                {removeRecentSearch && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeRecentSearch(city);
+                    }}
+                    className="p-1 ml-2 text-[var(--text-muted)] hover:text-red-400 transition-colors rounded-md hover:bg-[var(--glass-bg)] flex-shrink-0"
+                    title={`Remove ${city}`}
+                    aria-label={`Remove ${city}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {clearRecentSearches && (
+            <div className="border-t border-[var(--border-color)] pt-1 mt-1 px-2 pb-1">
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  clearRecentSearches();
+                }}
+                className="w-full flex items-center justify-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--border-color)] py-1.5 rounded-lg transition-colors font-medium"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear All History</span>
+              </button>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { AlertTriangle, Info, Zap, ChevronDown, ChevronUp, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Info, Zap, ChevronDown, ChevronUp, X, Megaphone } from 'lucide-react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useWeather } from '../context/WeatherContext.jsx';
 
 const severityConfig = {
@@ -24,6 +26,13 @@ const severityConfig = {
     iconColor: 'text-red-500',
     badgeClass: 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400',
   },
+  broadcast: {
+    icon: Megaphone,
+    label: 'System Broadcast',
+    className: 'alert-warning',
+    iconColor: 'text-amber-400',
+    badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  },
 };
 
 function AlertItem({ alert, onDismiss }) {
@@ -44,20 +53,22 @@ function AlertItem({ alert, onDismiss }) {
               {alert.event}
             </p>
           </div>
-          {expanded && (
+          {expanded && alert.description && (
             <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed animate-fade-in">
               {alert.description}
             </p>
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded"
-            aria-label={expanded ? 'Collapse alert' : 'Expand alert'}
-          >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+          {alert.description && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded"
+              aria-label={expanded ? 'Collapse alert' : 'Expand alert'}
+            >
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
           <button
             onClick={() => onDismiss(alert.id)}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded"
@@ -72,10 +83,44 @@ function AlertItem({ alert, onDismiss }) {
 }
 
 export default function WeatherAlert() {
-  const { alerts } = useWeather();
+  const { alerts: contextAlerts } = useWeather();
+  const [dbAlerts, setDbAlerts] = useState([]);
   const [dismissed, setDismissed] = useState([]);
 
-  const visible = (alerts || []).filter((a) => !dismissed.includes(a.id));
+  // Listen for real-time announcements from Firestore
+  useEffect(() => {
+    // Query active announcements (in-memory sort avoids composite index requirement)
+    const q = query(collection(db, 'announcements'), where('active', '==', true));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const liveAnnouncements = snapshot.docs.map((docItem) => {
+          const data = docItem.data();
+          return {
+            id: docItem.id,
+            event: data.message,
+            severity: 'broadcast',
+            description: '',
+            createdAt: data.createdAt?.toMillis() || Date.now(),
+          };
+        });
+
+        // Sort descending by creation date on client side
+        liveAnnouncements.sort((a, b) => b.createdAt - a.createdAt);
+        setDbAlerts(liveAnnouncements);
+      },
+      (err) => {
+        console.error('Error fetching broadcast alerts:', err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const combinedAlerts = [...dbAlerts, ...(contextAlerts || [])];
+  const visible = combinedAlerts.filter((a) => !dismissed.includes(a.id));
+
   if (!visible.length) return null;
 
   function dismiss(id) {
@@ -85,7 +130,7 @@ export default function WeatherAlert() {
   return (
     <div className="glass-card p-5 space-y-3 animate-fade-in">
       <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-        ⚠️ Weather Alerts
+        ⚠️ Weather Alerts & Announcements
       </h2>
       {visible.map((alert) => (
         <AlertItem key={alert.id} alert={alert} onDismiss={dismiss} />

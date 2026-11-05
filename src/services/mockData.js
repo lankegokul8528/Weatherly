@@ -1,6 +1,3 @@
-// Realistic mock weather data for development
-// Used as fallback when API key is absent or an API call fails
-
 export const mockCurrentWeather = {
   city: 'Vijayawada',
   country: 'IN',
@@ -15,49 +12,69 @@ export const mockCurrentWeather = {
   pressure: 1012,
   visibility: 8,
   uvIndex: 7,
-  sunrise: 1693441800, // unix ts
+  sunrise: 1693441800,
   sunset: 1693486800,
   condition: 'Sunny',
   conditionCode: 800,
   icon: '01d',
   description: 'clear sky',
-  timezone: 19800, // UTC+5:30
+  timezone: 19800,
 };
 
-export const mockHourlyForecast = [
-  { time: '06 AM', temp: 27, conditionCode: 800, icon: '01d', rainChance: 5, condition: 'Clear' },
-  { time: '07 AM', temp: 28, conditionCode: 800, icon: '01d', rainChance: 5, condition: 'Clear' },
-  { time: '08 AM', temp: 29, conditionCode: 800, icon: '01d', rainChance: 8, condition: 'Clear' },
-  { time: '09 AM', temp: 30, conditionCode: 801, icon: '02d', rainChance: 10, condition: 'Partly Cloudy' },
-  { time: '10 AM', temp: 31, conditionCode: 801, icon: '02d', rainChance: 12, condition: 'Partly Cloudy' },
-  { time: '11 AM', temp: 32, conditionCode: 800, icon: '01d', rainChance: 10, condition: 'Sunny' },
-  { time: '12 PM', temp: 33, conditionCode: 800, icon: '01d', rainChance: 15, condition: 'Sunny' },
-  { time: '01 PM', temp: 34, conditionCode: 800, icon: '01d', rainChance: 18, condition: 'Sunny' },
-  { time: '02 PM', temp: 34, conditionCode: 802, icon: '03d', rainChance: 25, condition: 'Cloudy' },
-  { time: '03 PM', temp: 33, conditionCode: 802, icon: '03d', rainChance: 30, condition: 'Cloudy' },
-  { time: '04 PM', temp: 32, conditionCode: 500, icon: '10d', rainChance: 45, condition: 'Light Rain' },
-  { time: '05 PM', temp: 30, conditionCode: 500, icon: '10d', rainChance: 60, condition: 'Light Rain' },
+const now = new Date();
+const conditionsList = [
+  { condition: 'Sunny', conditionCode: 800, icon: '01d', rainChance: 5 },
+  { condition: 'Clear', conditionCode: 800, icon: '01d', rainChance: 5 },
+  { condition: 'Partly Cloudy', conditionCode: 801, icon: '02d', rainChance: 12 },
+  { condition: 'Cloudy', conditionCode: 802, icon: '03d', rainChance: 25 },
+  { condition: 'Light Rain', conditionCode: 500, icon: '10d', rainChance: 45 },
 ];
 
-export const mockWeeklyForecast = [
-  { day: 'Today', date: 'Aug 31', conditionCode: 800, icon: '01d', condition: 'Sunny', high: 34, low: 27, rainChance: 10 },
-  { day: 'Tuesday', date: 'Sep 1', conditionCode: 801, icon: '02d', condition: 'Partly Cloudy', high: 33, low: 26, rainChance: 20 },
-  { day: 'Wednesday', date: 'Sep 2', conditionCode: 500, icon: '10d', condition: 'Light Rain', high: 30, low: 25, rainChance: 65 },
-  { day: 'Thursday', date: 'Sep 3', conditionCode: 502, icon: '10d', condition: 'Heavy Rain', high: 28, low: 24, rainChance: 80 },
-  { day: 'Friday', date: 'Sep 4', conditionCode: 802, icon: '03d', condition: 'Cloudy', high: 31, low: 25, rainChance: 35 },
-  { day: 'Saturday', date: 'Sep 5', conditionCode: 800, icon: '01d', condition: 'Sunny', high: 33, low: 26, rainChance: 10 },
-  { day: 'Sunday', date: 'Sep 6', conditionCode: 801, icon: '02d', condition: 'Partly Cloudy', high: 32, low: 26, rainChance: 25 },
-];
+export const mockHourlyForecast = Array.from({ length: 12 }, (_, i) => {
+  const hourTime = new Date(now.getTime() + i * 60 * 60 * 1000);
+  const timeLabel = i === 0 
+    ? 'Now' 
+    : hourTime.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+    
+  const cond = conditionsList[i % conditionsList.length];
+
+  return {
+    time: timeLabel,
+    temp: 32 - Math.floor(i / 2) + (i % 2),
+    conditionCode: cond.conditionCode,
+    icon: cond.icon,
+    rainChance: cond.rainChance,
+    condition: cond.condition,
+  };
+});
+
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export const mockWeeklyForecast = Array.from({ length: 7 }, (_, idx) => {
+  const futureDate = new Date(now);
+  futureDate.setDate(now.getDate() + idx);
+
+  const isToday = idx === 0;
+  const high = 34 - idx + (idx % 2 === 0 ? 1 : 0);
+  const low = 27 - Math.floor(idx / 2);
+
+  return {
+    day: isToday ? 'Today' : dayNames[futureDate.getDay()],
+    date: `${monthNames[futureDate.getMonth()]} ${futureDate.getDate()}`,
+    dateDisplay: `${monthNames[futureDate.getMonth()]} ${futureDate.getDate()}`,
+    conditionCode: idx % 3 === 0 ? 800 : idx % 3 === 1 ? 801 : 500,
+    icon: idx % 3 === 0 ? '01d' : idx % 3 === 1 ? '02d' : '10d',
+    condition: idx % 3 === 0 ? 'Sunny' : idx % 3 === 1 ? 'Partly Cloudy' : 'Light Rain',
+    high: high,
+    low: low,
+    tempMax: high,
+    tempMin: low,
+    rainChance: idx * 12,
+  };
+});
 
 export const mockAlerts = [
-  {
-    id: 1,
-    severity: 'warning',
-    event: 'Heavy Rainfall Advisory',
-    description: 'Heavy rainfall is expected in the Krishna district including Vijayawada. Residents should stay indoors and avoid low-lying areas.',
-    start: Date.now(),
-    end: Date.now() + 24 * 60 * 60 * 1000,
-  },
   {
     id: 2,
     severity: 'info',
