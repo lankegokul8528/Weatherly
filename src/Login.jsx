@@ -12,6 +12,27 @@ export default function Login({ onSwitch }) {
 
   const canvasRef = useRef(null);
 
+  // Controls the color of the text typed into Email, Password, and CAPTCHA fields
+  const inputStyle = {
+    padding: "10px",
+    color: "#0f172a",           // Typed text color (dark slate)
+    backgroundColor: "#ffffff", // Input background color
+    border: "1px solid #cbd5e1",
+    borderRadius: "4px",
+    fontSize: "14px",
+  };
+
+  /* Alternative Dark Input Style (uncomment if you want dark boxes with white text):
+  const inputStyle = {
+    padding: "10px",
+    color: "#f8fafc",
+    backgroundColor: "#1e293b",
+    border: "1px solid #334155",
+    borderRadius: "4px",
+    fontSize: "14px",
+  };
+  */
+
   const generateCaptcha = () => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     let generated = "";
@@ -28,12 +49,10 @@ export default function Login({ onSwitch }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
-    // Clear and set background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#f1f5f9";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add random noise lines
     for (let i = 0; i < 6; i++) {
       ctx.strokeStyle = `rgba(${Math.random() * 150}, ${Math.random() * 150}, ${Math.random() * 150}, 0.6)`;
       ctx.beginPath();
@@ -42,13 +61,11 @@ export default function Login({ onSwitch }) {
       ctx.stroke();
     }
 
-    // Add random noise dots
     for (let i = 0; i < 30; i++) {
       ctx.fillStyle = "rgba(100, 116, 139, 0.5)";
       ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
     }
 
-    // Draw rotated characters
     ctx.font = "bold 22px monospace";
     ctx.textBaseline = "middle";
     for (let i = 0; i < text.length; i++) {
@@ -95,9 +112,9 @@ export default function Login({ onSwitch }) {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
+    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #334155", borderRadius: "8px", backgroundColor: "#0f172a", color: "#f8fafc" }}>
       <h2>Login</h2>
-      {error && <p style={{ color: "red", fontSize: "14px" }}>{error}</p>}
+      {error && <p style={{ color: "#f87171", fontSize: "14px" }}>{error}</p>}
       
       <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <input
@@ -106,7 +123,7 @@ export default function Login({ onSwitch }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ padding: "8px" }}
+          style={inputStyle}
         />
         <input
           type="password"
@@ -114,7 +131,7 @@ export default function Login({ onSwitch }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ padding: "8px" }}
+          style={inputStyle}
         />
 
         {/* Auto-Generated CAPTCHA Box */}
@@ -149,7 +166,7 @@ export default function Login({ onSwitch }) {
           value={userCaptchaInput}
           onChange={(e) => setUserCaptchaInput(e.target.value)}
           required
-          style={{ padding: "8px" }}
+          style={inputStyle}
         />
 
         <button
@@ -162,6 +179,7 @@ export default function Login({ onSwitch }) {
             border: "none",
             borderRadius: "4px",
             cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: "600",
           }}
         >
           {loading ? "Logging in..." : "Log In"}
@@ -173,7 +191,7 @@ export default function Login({ onSwitch }) {
         <button
           type="button"
           onClick={onSwitch}
-          style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", textDecoration: "underline" }}
+          style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", textDecoration: "underline" }}
         >
           Register here
         </button>
